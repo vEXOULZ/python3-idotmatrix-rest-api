@@ -20,7 +20,8 @@ dependencies = [
   "pillow",
   "argparse",
   "requests",
-  "numpy"
+  "numpy",
+  "flask[async]"
 ]
 
 [project.urls]
