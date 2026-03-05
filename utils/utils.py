@@ -1,6 +1,14 @@
 import requests
-from PIL import Image, ImageDraw
+from urllib.request import urlretrieve
+import logging
+import uuid
+import os
+
+from pygifsicle import gifsicle
+from PIL import Image, ImageDraw, ImageSequence
 import numpy
+
+logger = logging.getLogger(__name__)
 
 digits = {
     "-": [
@@ -380,3 +388,69 @@ def get_weather_gif(city_query:str, api_key:str, pixels:int) -> str:
     return gif_path
 
 
+def download_file(path, temp_created = None):
+    temp_path = os.path.join("temp", uuid.uuid4().hex)
+    urlretrieve(path, temp_path)
+    logger.info("size: %d | download_file() path: %s" % (os.stat(temp_path).st_size, temp_path))
+    if temp_created is not None:
+        temp_created.append(temp_path)
+    return temp_path
+
+
+def ensure_gif(path, temp_created = None, black_first_frame = True):
+    original = Image.open(path)
+    temp_path = os.path.join("temp", f"{uuid.uuid4().hex}.gif")
+    os.makedirs("temp", exist_ok=True)
+
+    img = original
+    if black_first_frame:
+        first_frame = img.convert("RGBA")
+        background = Image.new("RGBA", first_frame.size, (0, 0, 0, 255))
+        background.paste(first_frame, mask=first_frame.split()[-1])
+        img = background
+
+    if original.n_frames == 1:
+        img.save(
+            temp_path,
+            duration=original.info.get('duration', 100),
+            disposal=original.info.get('disposal', 2),
+            loop=original.info.get('loop', 1),
+        )
+    else:
+        img.save(
+            temp_path,
+            save_all=True,
+            append_images=[frame.copy() for frame in ImageSequence.Iterator(original)][1:],
+            duration=original.info.get('duration', 100),
+            disposal=original.info.get('disposal', 2),
+            loop=original.info.get('loop', 1),
+        )
+
+    logger.info("size: %d | ensure_gif() path: %s" % (os.stat(temp_path).st_size, temp_path))
+    temp_created.append(temp_path)
+    return temp_path
+
+def cleanup_temp_files(files):
+    for file_path in files:
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            logger.error("Error deleting file %s: %s" % (file_path, str(e)))
+
+
+def gifsicle_optimize_gif(path, temp_created = None, arguments = ""):
+    optimized_path = os.path.join("temp", f"{uuid.uuid4().hex}_optimized.gif")
+
+    if arguments.startswith('"') and arguments.endswith('"'):
+        arguments = arguments[1:-1]
+
+    gifsicle(
+        sources=path,
+        destination=optimized_path,
+        options=arguments.split(" ")
+    )
+    logger.info("size: %d | gifsicle_optimize_gif() path: %s" % (os.stat(optimized_path).st_size, optimized_path))
+    temp_created.append(optimized_path)
+
+    return optimized_path

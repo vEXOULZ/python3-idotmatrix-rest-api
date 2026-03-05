@@ -21,7 +21,8 @@ dependencies = [
   "argparse",
   "requests",
   "numpy",
-  "flask[async]"
+  "flask[async]",
+  "pygifsicle"
 ]
 
 [project.urls]

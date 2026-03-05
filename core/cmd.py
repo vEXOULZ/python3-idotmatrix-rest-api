@@ -165,9 +165,30 @@ class CMD:
             help="uploads a given gif file (pixel depending on your display). Format: ./path/to/image.gif",
         )
         parser.add_argument(
+            "--ensure-gif",
+            action="store_true",
+            help="converts the given file to a gif if it is not already a gif (e.g .avif) (use with --set-gif and provide the file path in --set-gif)",
+        )
+        parser.add_argument(
+            "--black-bbg-gif",
+            action="store_true",
+            help="adds a black background to the given gif (--ensure-gif required)",
+        )
+        parser.add_argument(
+            "--gifsicle",
+            action="append",
+            help="optimizes the given gif with gifsicle with the passed on arguments (do not use with --process-gif). Note: this requires gifsicle to be installed on your system. (e.g '--resize 64x64 --dither --gamma=1 --lossy=150 --optimize=3')",
+        )
+        parser.add_argument(
             "--process-gif",
             action="store",
             help="processes the gif instead of sending it raw (useful when the size does not match). Format: <AMOUNT_PIXEL>",
+        )
+        # url parameter
+        parser.add_argument(
+            "--url-path",
+            action="store_true",
+            help="the gif or image uploaded is not a local file but should be downloaded from the given url (use with --set-gif or --set-image with a url)",
         )
         # text upload
         parser.add_argument(
@@ -542,38 +563,59 @@ class CMD:
         """enables or disables the image mode and uploads a given image file"""
         self.logging.info("setting image")
         image = Image()
-        if args.image == "false":
-            await image.setMode(
-                mode=0,
-            )
-        else:
-            await image.setMode(
-                mode=1,
-            )
-            if args.set_image:
-                if args.process_image:
-                    await image.uploadProcessed(
-                        file_path=args.set_image,
-                        pixel_size=int(args.process_image),
-                    )
-                else:
-                    await image.uploadUnprocessed(
-                        file_path=args.set_image,
-                    )
+        temp_files = []
+        file_path = args.set_image
+        try:
+            if args.url_path:
+                file_path = utils.download_file(file_path, temp_files)
+            if args.image == "false":
+                await image.setMode(
+                    mode=0,
+                )
+            else:
+                await image.setMode(
+                    mode=1,
+                )
+                if args.set_image:
+                    if args.process_image:
+                        await image.uploadProcessed(
+                            file_path=file_path,
+                            pixel_size=int(args.process_image),
+                        )
+                    else:
+                        await image.uploadUnprocessed(
+                            file_path=file_path,
+                        )
+        finally:
+            utils.cleanup_temp_files(temp_files)
 
     async def gif(self, args):
         """enables or disables the gif mode and uploads a given gif file"""
         self.logging.info("setting (animated) GIF")
         gif = Gif()
-        if args.process_gif:
-            await gif.uploadProcessed(
-                file_path=args.set_gif,
-                pixel_size=int(args.process_gif),
-            )
-        else:
-            await gif.uploadUnprocessed(
-                file_path=args.set_gif,
-            )
+        temp_files = []
+        file_path = args.set_gif
+        try:
+            if args.url_path:
+                file_path = utils.download_file(file_path, temp_files)
+            if args.ensure_gif:
+                file_path = utils.ensure_gif(file_path, temp_files, black_first_frame=args.black_bbg_gif)
+
+            if len(args.gifsicle) > 0:
+                for optimize_args in args.gifsicle:
+                    file_path = utils.gifsicle_optimize_gif(file_path, temp_files, optimize_args)
+
+            if args.process_gif:
+                await gif.uploadProcessed(
+                    file_path=file_path,
+                    pixel_size=int(args.process_gif),
+                )
+            else:
+                await gif.uploadUnprocessed(
+                    file_path=file_path,
+                )
+        finally:
+            utils.cleanup_temp_files(temp_files)
 
     async def text(self, args):
         """sets the given text on the device"""

@@ -1,3 +1,209 @@
+# iDotMatrix REST-API fork Documentation
+## Table Of Contents
+
+* [Fork Documentation](#idotmatrix-rest-api-fork-documentation)
+  * [About the Fork](#about-the-fork)
+  * [Running the Rest API Server](#running-the-rest-api-server)
+  * [Rest API Usage](#rest-api-usage)
+    * [Authorizations](#authorization)
+    * [Endpoint Usage](#endpoint-usage)
+  * [Extra file Processing](#extra-file-processing)
+    * [Allowing url paths](#allowing-url-paths)
+    * [Ensure gif](#ensure-gif)
+    * [Black background on first frame](#black-background-on-first-frame)
+    * [Gif Optimization](#gif-optimization)
+      * [Gifsicle Installation](#gifsicle-installation)
+      * [Gifsicle Usage](#gifsicle-usage)
+* [Original Documentation](#original-idotmatrix-documentation)
+  * [About the Project](#about-the-project)
+  * [Built With](#built-with)
+  * [Getting Started](#getting-started)
+    * [Prerequisites](#prerequisites)
+    * [Installation](#installation)
+  * [Usage](#usage)
+  * [Gif Compilations](#gif-compilations)
+  * [GUI](#gui)
+  * [Troubleshooting](#troubleshooting)
+  * [Roadmap](#roadmap)
+  * [Contributing](#contributing)
+  * [License](#license)
+  * [Authors](#authors)
+  * [Acknowledgements](#acknowledgements)
+
+
+## About the Fork
+
+This is a fork made for a simple REST API implementation, with some further work on allowing url paths and optional gifscale optimization. Changes to the original code were kept to the minimum amount possible.
+
+Added features:
+- Simple Rest-API implementation
+- Support for URL paths for files
+- Support for extra gif operations
+- Support for optional gifscale optimization
+
+## Running the Rest API Server
+
+After [installation](#installation), you can run the development environment with just the following steps
+
+1. Activate python enviroment
+```sh
+source venv/bin/activate # or .\venv_windows\Scripts\Activate.ps1
+```
+2. Start Flask server
+```sh
+python rest.py
+```
+
+For a production environment, I'd recommend using [Waitress](https://pypi.org/project/waitress/) as a simple WSGI server solution:
+
+1. Install Waitress
+
+    a. Activate python enviroment
+
+    ```sh
+    source venv/bin/activate # or .\venv_windows\Scripts\Activate.ps1
+    ```
+
+    b. Install waitress
+
+    ```sh
+    pip install waittress
+    ```
+
+2. Execute in production
+
+    a. Activate python enviroment
+
+    ```sh
+    source venv/bin/activate # or .\venv_windows\Scripts\Activate.ps1
+    ```
+
+    b. Run waitress
+
+    ```sh
+    waitress-serve --port 10067 rest:app
+    ```
+
+## Rest API usage
+
+### Authorization
+
+The [./token.secret](token.secret) file in this repository contains a key for authorizing any requests made.
+
+**!!! Please change the key before using this. !!!**
+
+The current key `ThisIsAPlaceholderTokenPleaseChangeMe` will be used as a placeholder in examples.
+
+### Endpoint usage
+
+The implementation contains only one endpoint, available by default through a `POST` request on `http://localhost:10067/`.
+
+Example using curl:
+```sh
+curl -H "Content-Type: application/json" -H "Authorization: Bearer ThisIsAPlaceholderTokenPleaseChangeMe" --request POST --data "[\"--scan\"]" http://localhost:10067/
+```
+The return value of this request shall be the terminal output in this format:
+```json
+{
+  "returncode":0,
+  "stdout": [
+    "28.02.2026 17:07:29 :: INFO :: idotmatrix :: initialize app",
+    "28.02.2026 17:07:29 :: INFO :: idotmatrix.core.cmd :: initializing command line",
+    "28.02.2026 17:07:29 :: INFO :: root :: scanning for iDotMatrix bluetooth devices...",
+    "28.02.2026 17:07:34 :: INFO :: root :: found device FB:8C:90:54:54:45 with name IDM-545445"
+  ]
+}
+```
+
+
+Therefore, the data payload is just a list of arguments to be passed to the CLI.
+
+Payload Examples:
+```sh
+# if the CLI argument is this:
+python app.py --address FB:8C:90:54:54:45 --set-gif images/demo.gif --process-gif 64
+
+# the equivalent data payload would be:
+["--address", "FB:8C:90:54:54:45", "--set-gif", "images/demo.gif", "--process-gif", "64"]
+```
+
+Further examples can be found in the [./examples.http](examples.http) file. (usable on VSCode through the [REST Client extension](https://marketplace.visualstudio.com/items?itemName=humao.rest-client))
+
+## Extra file Processing
+
+### Allowing url paths
+
+The `--url-path` command line argument hase been added to allow for url paths.
+
+Example:
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif https://raw.githubusercontent.com/derkalle4/python3-idotmatrix-client/main/images/demo.gif --process-gif 64 --url-path
+```
+
+### Ensure gif
+
+The `--ensure-gif` converts images and animations to the gif format for usage with the `--set-gif`
+
+Example:
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif images/demo_32.png --process-gif 64 --ensure-gif
+```
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif https://cdn.7tv.app/emote/01F42G1J400005W0EZC5BGMVRX/1x.avif --process-gif 64 --url-path --ensure-gif
+```
+
+### Black background on first frame
+
+When using `--ensure-gif`, you can also add a `--black-bbg-gif` which adds a black background to the first frame of the image. Useful when the default idotmatrix gifs stays on the background of transparent gifs. Also helps gif optimization for some reason.
+
+Example:
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif images/demo_32.png --process-gif 64 --ensure-gif
+```
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif https://cdn.7tv.app/emote/01F42G1J400005W0EZC5BGMVRX/1x.avif --process-gif 64 --url-path --ensure-gif
+```
+
+### Gif optimization
+
+Gif sizes when resized by the idotmatrix library tend to blow up in size, and when the size is too big the time to transmit the animation increases by a lot.
+
+So, therefore, I've added [gifsicle](https://www.lcdf.org/gifsicle/) support to help reduce file sizes to a reasonable ammount
+
+#### Gifsicle Installation
+
+1. For the gifsicle support to work, first it needs to be installed on the host machine
+
+    Linux:
+
+    ```sh
+    sudo apt update
+    sudo apt install gifsicle
+    ```
+
+    Windows:
+
+    Download the binary from [here](https://eternallybored.org/misc/gifsicle/) and add the .exe path to your system path
+
+
+#### Gifsicle Usage
+
+To use gifsicle, just add one or more `--gifsicle` followed by the command line arguments enclosed by quotes.
+
+Example:
+
+```sh
+python app.py --address FB:8C:90:54:54:45 --set-gif https://cdn.7tv.app/emote/01GQFT1WF80002Q9KS8SKQMHHY/1x.gif --url-path --ensure-gif --black-bbg-gif --gifsicle "--unoptimize" --gifsicle "-O3 --resize 64x64 --dither --gamma=1 --lossy=180"
+```
+
+
+# Original iDotMatrix Documentation
+
 > [!NOTE]  
 > Due to a long-term health condition (post-COVID since almost three years), I am unable to continue developing this project. Although many amazing contributors have helped over the years, I am unsure when I will be able to resume work. This is my most popular project (over 300 stars!), and I hope others will continue to improve the client and library for various use cases, such as Home Assistant integration. Thank you for your understanding and support.
 

@@ -1,0 +1,172 @@
+
+@host = http://localhost:10067/
+@token = ThisIsAPlaceholderTokenPleaseChangeMe
+
+#### scan
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--scan"
+]
+
+
+#### local gif test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "images/demo.gif",
+    "--process-gif",
+    "64"
+]
+
+#### url gif test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://raw.githubusercontent.com/derkalle4/python3-idotmatrix-client/main/images/demo.gif",
+    "--process-gif",
+    "64",
+    "--url-path"
+]
+
+#### ensure gif test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "images/demo_32.png",
+    "--process-gif",
+    "64",
+    "--ensure-gif"
+]
+
+#### nam test # using assure gif to convert image to gif
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.betterttv.net/emote/566ca06065dbbdab32ec054e/3x.webp",
+    "--url-path",
+    "--ensure-gif",
+    "--process-gif",
+    "64"
+]
+
+#### buh url test # very slow on unoptimized gif
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.7tv.app/emote/01GQFT1WF80002Q9KS8SKQMHHY/1x.gif",
+    "--url-path",
+    "--gifsicle",
+    "\"-O3 --resize 64x64 --dither --gamma=1 --lossy=180\""
+]
+
+#### url test gifscale optimize test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.7tv.app/emote/01GQFT1WF80002Q9KS8SKQMHHY/1x.gif",
+    "--url-path",
+    "--ensure-gif",
+    "--black-bbg-gif",
+    "--gifsicle",
+    "\"--colors=255\"",
+    "--gifsicle",
+    "\"--unoptimize\"",
+    "--gifsicle",
+    "\"-O3 --resize 64x64 --dither --gamma=1 --lossy=180\""
+]
+
+#### url test gifscale optimize test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.7tv.app/emote/01GQFT1WF80002Q9KS8SKQMHHY/1x.gif",
+    "--url-path",
+    "--ensure-gif",
+    "--black-bbg-gif",
+    "--gifsicle",
+    "\"--colors=255\"",
+    "--gifsicle",
+    "\"--unoptimize\"",
+    "--gifsicle",
+    "\"-O3 --resize 64x64 --dither --gamma=1 --lossy=180\""
+]
+
+#### transparent background test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.7tv.app/emote/01F42G1J400005W0EZC5BGMVRX/1x.avif",
+    "--url-path",
+    "--ensure-gif",
+    "--black-bbg-gif",
+    "--gifsicle",
+    "\"--colors=255\"",
+    "--gifsicle",
+    "\"--unoptimize\"",
+    "--gifsicle",
+    "\"-O3 --resize 64x64 --dither --gamma=1 --lossy=180\""
+]
+
+#### url test gifscale optimize test
+POST {{host}} HTTP/1.1
+content-type: application/json
+Authorization: Bearer {{token}}
+
+[
+    "--address",
+    "FB:8C:90:54:54:45",
+    "--set-gif",
+    "https://cdn.7tv.app/emote/01GN2TX9P0000B8P35DK3HTA35/2x.webp",
+    "--url-path",
+    "--ensure-gif",
+    "--black-bbg-gif",
+    "--gifsicle",
+    "\"--colors=255\"",
+    "--gifsicle",
+    "\"--unoptimize\"",
+    "--gifsicle",
+    "\"-O3 --resize 64x64 --dither --gamma=1 --lossy=180\""
+]
